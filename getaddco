@@ -2,5 +2,227 @@
 
 
 
-print("INSTALLED!")
+-- [[ $rxtool: Delta Xless Addon - Full Version & Stroke Fixed ]]
 
+local TweenService = game:GetService("TweenService")
+local LP = game:GetService("Players").LocalPlayer
+local MarketplaceService = game:GetService("MarketplaceService")
+
+-- [1] ฟังก์ชันค้นหา Delta Settings Folder
+local function FindDeltaUI()
+    local CoreGui = game:GetService("CoreGui")
+    for _, gui in pairs(CoreGui:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            local icon = gui:FindFirstChildWhichIsA("ImageButton", true)
+            if icon then
+                local stroke = icon:FindFirstChildWhichIsA("UIStroke")
+                if stroke and stroke.Thickness == 2 then
+                    local settings = gui:FindFirstChild("Settings", true)
+                    if settings and settings:FindFirstChild("Holder") then
+                        return settings.Holder
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local Holder = FindDeltaUI()
+
+-- Fallback Path
+if not Holder then
+    pcall(function()
+        Holder = game:GetService("CoreGui").bcfb765be53c0c2d99cc8cc94e0548bff0cdf7c1c066a4139060162a0215f5b8:FindFirstChild("Settings", true).Holder
+    end)
+end
+
+if Holder then
+    print("⚡ Delta Xless Addon: Full Functions Loaded!")
+
+    -- [2] ฟังก์ชันสร้าง UI (Fixed Stroke & Alignment)
+    local function CreateAddonItem(name, value, action)
+        local Item = Instance.new("Frame")
+        Item.Name = "Xless_" .. name:gsub(" ", "")
+        Item.Parent = Holder
+        Item.BackgroundColor3 = Color3.fromRGB(37, 40, 49)
+        Item.BorderSizePixel = 0
+        
+        -- [FIX] ปรับขนาดและตำแหน่งเพื่อไม่ให้ Stroke ทะลุขอบ ScrollingFrame
+        Item.Size = UDim2.new(1, -18, 0, 58) 
+        Item.Position = UDim2.new(0, 9, 0, 0) -- ขยับออกมาด้านขวา 9 pixel กันขอบซ้ายทะลุ
+        
+        local Corner = Instance.new("UICorner")
+        Corner.CornerRadius = UDim.new(0, 8) -- ประมาณ 0.2
+        Corner.Parent = Item
+
+        local Stroke = Instance.new("UIStroke")
+        Stroke.Thickness = 2
+        Stroke.Color = Color3.fromRGB(60, 65, 80)
+        Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border -- บังคับขอบเข้าด้านใน
+        Stroke.Parent = Item
+
+        local Title = Instance.new("TextLabel")
+        Title.Parent = Item
+        Title.Text = name .. " : <font color='#4FA4F2'>" .. value .. "</font>"
+        Title.RichText = true
+        Title.Size = UDim2.new(1, -25, 0, 25)
+        Title.Position = UDim2.new(0, 12, 0, 8) -- ขยับข้อความหลบเส้นขอบ
+        Title.BackgroundTransparency = 1
+        Title.TextColor3 = Color3.new(1, 1, 1)
+        Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.Font = Enum.Font.GothamBold
+        Title.TextSize = 14
+
+        local Desc = Instance.new("TextLabel")
+        Desc.Parent = Item
+        Desc.Text = "Click to execute / Copy info"
+        Desc.Size = UDim2.new(1, -25, 0, 20)
+        Desc.Position = UDim2.new(0, 12, 0, 30)
+        Desc.BackgroundTransparency = 1
+        Desc.TextColor3 = Color3.fromRGB(135, 139, 150)
+        Desc.TextXAlignment = Enum.TextXAlignment.Left
+        Desc.Font = Enum.Font.Gotham
+        Desc.TextSize = 12
+
+        local Btn = Instance.new("TextButton")
+        Btn.Size = UDim2.new(1, 0, 1, 0)
+        Btn.BackgroundTransparency = 1
+        Btn.Text = ""
+        Btn.Parent = Item
+
+        -- Interaction & Tweening
+        Btn.MouseButton1Click:Connect(function()
+            TweenService:Create(Item, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 50, 79)}):Play()
+            TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(58, 138, 253)}):Play()
+            
+            action()
+            
+            task.wait(0.3)
+            TweenService:Create(Item, TweenInfo.new(0.4), {BackgroundColor3 = Color3.fromRGB(37, 40, 49)}):Play()
+            TweenService:Create(Stroke, TweenInfo.new(0.4), {Color = Color3.fromRGB(60, 65, 80)}):Play()
+        end)
+    end
+
+    -- ==========================================
+    -- ⚡ EXECUTION: รวมฟังชั่นทั้งหมด (ALL IN ONE)
+    -- ==========================================
+
+    local gameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
+
+    -- 1. ข้อมูลเกม
+    CreateAddonItem("Game Name", gameInfo.Name, function()
+        setclipboard(gameInfo.Name)
+    end)
+
+    -- 2. ไอดีเกม
+    CreateAddonItem("Game ID", tostring(game.PlaceId), function()
+        setclipboard(tostring(game.PlaceId))
+    end)
+
+    -- 3. ไอดีผู้ใช้
+    CreateAddonItem("User ID", tostring(LP.UserId), function()
+        setclipboard(tostring(LP.UserId))
+    end)
+
+    -- 4. รีเซ็ตตัวละคร
+    CreateAddonItem("Reset", "Character", function()
+        if LP.Character then LP.Character:BreakJoints() end
+    end)
+
+    -- 5. ก๊อปปี้ตำแหน่ง (CFrame)
+    CreateAddonItem("Copy CFrame", "Pos & Rot", function()
+        local cf = LP.Character and LP.Character.PrimaryPart and LP.Character.PrimaryPart.CFrame
+        if cf then setclipboard("CFrame.new(" .. tostring(cf) .. ")") end
+    end)
+
+    -- 6. ก๊อปปี้สคริปต์วาร์ป (Teleport)
+    CreateAddonItem("Copy TP Script", "Direct Move", function()
+        local pos = LP.Character.PrimaryPart.Position
+        setclipboard(string.format("game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(%f, %f, %f)", pos.X, pos.Y, pos.Z))
+    end)
+
+    -- 7. ก๊อปปี้สคริปต์วาร์ปแบบสมูท (Tween)
+    CreateAddonItem("Copy Tween Script", "Smooth Move", function()
+        local pos = LP.Character.PrimaryPart.Position
+        setclipboard(string.format([[local ts = game:GetService("TweenService")
+local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+ts:Create(hrp, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = CFrame.new(%f, %f, %f)}):Play()]], pos.X, pos.Y, pos.Z))
+    end)
+    
+    
+    
+   
+
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+
+-- ฟังก์ชันสำหรับหาเซิร์ฟเวอร์ตามจำนวนผู้เล่นที่กำหนด
+local function ServerHopByPlayerCount(targetCount)
+    local cursor = ""
+    local foundServer = nil
+
+    repeat
+        local url = string.format(
+            "https://games.roblox.com/v1/games/%d/servers/0?sortOrder=Asc&limit=100%s",
+            PlaceId,
+            cursor ~= "" and "&cursor=" .. cursor or ""
+        )
+        
+        local success, response = pcall(function()
+            return game:HttpGet(url)
+        end)
+
+        if success and response then
+            local data = HttpService:JSONDecode(response)
+            if data and data.data then
+                for _, server in ipairs(data.data) do
+                    -- เช็คจำนวนผู้เล่น และต้องไม่ใช่เซิร์ฟเวอร์ปัจจุบันที่อยู่นี้
+                    if server.playing == targetCount and server.id ~= JobId then
+                        foundServer = server.id
+                        break
+                    end
+                end
+                cursor = data.nextPageCursor
+            else
+                break
+            end
+        else
+            break
+        end
+    until foundServer or not cursor
+
+    if foundServer then
+        TeleportService:TeleportToPlaceInstance(PlaceId, foundServer)
+    else
+        warn("ไม่พบเซิร์ฟเวอร์ที่มีผู้เล่นจำนวน " .. tostring(targetCount) .. " คน")
+    end
+end
+
+-- 1. ปุ่มย้ายไปเซิร์ฟที่มีผู้เล่น 1 คน
+CreateAddonItem("Server Hop (1 Player)", "Move To 1 Player Server", function()
+    ServerHopByPlayerCount(1)
+end)
+
+-- 2. ปุ่มย้ายไปเซิร์ฟที่มีผู้เล่น 2 คน
+CreateAddonItem("Server Hop (2 Players)", "Move To 2 Player Server", function()
+    ServerHopByPlayerCount(2)
+end)
+
+else
+end
+
+
+
+--[[
+
+
+    CreateAddonItem("title", "description", function()
+        print("hi")
+    end)
+    
+    
+
+]]
